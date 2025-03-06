@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Search Files</title>
+    <style>
+      body {
+        font-family: "sunborn";
+        background-color: #000000;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #000000;
+        margin-bottom: 15px;
+      }
+
+      input,
+      select {
+        width: calc(100% - 22px);
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #000000;
+        border-radius: 6px;
+      }
+
+      button {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 6px;
+        background-color: #d27809;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+        transition: 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      .search-results {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .search-results li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f9f9f9;
+        padding: 12px;
+        border-radius: 6px;
+        margin: 6px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        flex-direction: column;
+        text-align: left;
+      }
+
+      .search-results a {
+        text-decoration: none;
+        color: #007bff;
+        font-weight: bold;
+      }
+
+      .search-results a:hover {
+        text-decoration: underline;
+      }
+
+      .navbar {
+        background-color: #d27809;
+        padding: 10px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+      }
+
+      .navbar h1 {
+        color: #ffffff;
+        margin: 0;
+        padding: 0 20px;
+        font-size: 20px;
+      }
+
+      .navbar a {
+        color: #ffffff;
+        text-decoration: none;
+        margin-left: 20px;
+        font-size: 16px;
+      }
+
+      img {
+        size: 20px;
+        height: 30px;
+      }
+
+      .file-content {
+        display: none;
+        background-color: #fff;
+        padding: 10px;
+        margin-top: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <img
+        src="C:\Users\Hafsa Kauser\Desktop\5thsem\WEB TECH\logo2.jpg"
+        alt="Logo"
+      />
+      <h1>QUICKSEEK</h1>
+      <a href="shu.html">Uploads</a>
+      <a href="search.html">Search</a>
+    </div>
+    <div class="container">
+      <h1>Search Files</h1>
+      <a href="shu.html"><button>Go to Upload Page</button></a>
+      <br /><br />
+      <input type="text" id="query" placeholder="Enter keyword" />
+      <input type="date" id="start_date" />
+      <input type="text" id="content_type" placeholder="Enter content type" />
+      <button onclick="searchFiles()">Search</button>
+      <ul id="searchResults" class="search-results"></ul>
+    </div>
+
+    <script>
+      const API_BASE_URL = "http://localhost:8001";
+
+      async function searchFiles() {
+        const query = document.getElementById("query").value.trim();
+        const start_date = document.getElementById("start_date").value;
+        const content_type = document
+          .getElementById("content_type")
+          .value.trim();
+
+        let params = new URLSearchParams();
+        if (query) params.append("query", query);
+        if (start_date) params.append("start_date", start_date);
+        if (content_type) params.append("content_type", content_type);
+
+        let url = `${API_BASE_URL}/search/?${params.toString()}`;
+        console.log("Search URL:", url);
+
+        const searchResults = document.getElementById("searchResults");
+        searchResults.innerHTML = "";
+
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+          console.log("Search Response:", data);
+
+          if (data.results.length === 0) {
+            searchResults.innerHTML = "<li>No files found.</li>";
+            return;
+          }
+
+          data.results.forEach((file) => {
+            let li = document.createElement("li");
+            li.innerHTML = `
+                        <strong>Filename:</strong> <a href="${API_BASE_URL}/files/${file.filename}" target="_blank">${file.filename}</a><br>
+                        <strong>Author:</strong> ${file.author}<br>
+                        <strong>Creation Date:</strong> ${file.creation_date}<br>
+                        <strong>Snippet:</strong> <em>${file.snippet}</em><br>
+                        <button onclick="viewFile('${file.filename}')">View</button>`;
+            searchResults.appendChild(li);
+          });
+        } catch (error) {
+          console.error("Error fetching search results:", error);
+        }
+      }
+
+      function viewFile(filename) {
+        const fileContent =
+          document.getElementById("fileContent") ||
+          document.createElement("div");
+        fileContent.id = "fileContent";
+        fileContent.className = "file-content";
+        fileContent.innerHTML = `<h3>Preview of ${filename}</h3>`;
+
+        fetch(`${API_BASE_URL}/view/${filename}`)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Could not fetch file preview.");
+            }
+            return response.blob();
+          })
+          .then((blob) => {
+            const url = URL.createObjectURL(blob);
+            if (filename.endsWith(".pdf")) {
+              fileContent.innerHTML += `<iframe src="${url}" width="100%" height="400px"></iframe>`;
+            } else {
+              blob.text().then((text) => {
+                fileContent.innerHTML += `<pre>${text}</pre>`;
+              });
+            }
+            document.body.appendChild(fileContent);
+            fileContent.style.display = "block";
+          })
+          .catch((error) => {
+            console.error("Error fetching file preview:", error);
+            alert("Error fetching file preview.");
+          });
+      }
+    </script>
+  </body>
+</html>

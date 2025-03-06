@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Files</title>
+    <style>
+      body {
+        font-family: "sunborn";
+        background-color: #070505;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+        color: #000000;
+      }
+
+      .navbar {
+        background-color: #d27809;
+        padding: 10px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+      }
+
+      .navbar h1 {
+        color: #ffffff;
+        margin: 0;
+        padding: 0 20px;
+        font-size: 20px;
+        font-style: bold;
+      }
+
+      .navbar a {
+        color: #ffffff;
+        text-decoration: none;
+        margin-left: 20px;
+        font-size: 16px;
+        font-style: bold;
+      }
+      img {
+        size: 20px;
+        height: 30px;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #060606;
+        margin-bottom: 15px;
+      }
+
+      input[type="file"] {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #000000;
+        border-radius: 6px;
+      }
+
+      button {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 6px;
+        background-color: #d27809;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+        transition: 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      .file-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .file-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f9f9f9;
+        padding: 12px;
+        border-radius: 6px;
+        margin: 6px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        gap: 10px;
+      }
+      .file-actions {
+        display: flex;
+        gap: 10px; /* Ensures spacing between buttons */
+        align-items: center;
+      }
+
+      #filePreview {
+        width: 100%;
+        height: 500px;
+        border: 1px solid #ccc;
+        margin-top: 20px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <img
+        src="C:\Users\Hafsa Kauser\Desktop\5thsem\WEB TECH\logo2.jpg"
+        alt="Logo"
+      />
+      <h1>QUICKSEEK</h1>
+      <a href="shu.html">Uploads</a>
+      <a href="search.html">Search</a>
+    </div>
+    <div class="container">
+      <h1>Upload Files</h1>
+      <input type="file" id="fileInput" multiple />
+      <button onclick="uploadFiles()">Upload</button>
+      <ul id="fileList" class="file-list"></ul>
+      <iframe id="filePreview"></iframe>
+    </div>
+
+    <script>
+      const API_BASE_URL = "http://localhost:8001";
+
+      async function uploadFiles() {
+        const fileInput = document.getElementById("fileInput");
+        const files = fileInput.files;
+        if (files.length === 0) return;
+
+        let formData = new FormData();
+        for (let file of files) {
+          formData.append("files", file);
+        }
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/upload/`, {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json();
+          console.log("Upload Response:", result);
+          listFiles();
+        } catch (error) {
+          console.error("Error uploading files:", error);
+        }
+      }
+
+      async function listFiles() {
+        const fileList = document.getElementById("fileList");
+        fileList.innerHTML = "";
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/files/`);
+          const data = await response.json();
+
+          data.files.forEach((filename) => {
+            let li = document.createElement("li");
+            li.innerHTML = `<span>${filename}</span>
+                                    <div class="file-actions">
+                                        <button onclick="viewFile('${filename}')">View</button>
+                                        <button onclick="deleteFile('${filename}')">Delete</button>
+                                    </div>`;
+            fileList.appendChild(li);
+          });
+        } catch (error) {
+          console.error("Error listing files:", error);
+        }
+      }
+
+      async function deleteFile(filename) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/files/${filename}`, {
+            method: "DELETE",
+          });
+          const result = await response.json();
+          console.log("Delete Response:", result);
+          listFiles();
+        } catch (error) {
+          console.error("Error deleting file:", error);
+        }
+      }
+
+      async function viewFile(filename) {
+        const filePreview = document.getElementById("filePreview");
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/view/${filename}`);
+
+          if (!response.ok) {
+            throw new Error("File not found");
+          }
+
+          filePreview.src = `${API_BASE_URL}/view/${filename}`;
+          filePreview.style.display = "block";
+        } catch (error) {
+          console.error("Error fetching file preview:", error);
+          alert("Could not fetch file preview.");
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", listFiles);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,87 @@
+
+ python -m uvicorn shu:app --reload
+curl http://localhost:9200
+
+curl.exe -X GET "http://localhost:9200"
+curl.exe -X DELETE "http://localhost:9200/documents"
+
+$payload = @"
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "synonym_filter": {
+          "type": "synonym",
+          "synonyms": [
+            "AI, artificial intelligence",
+            "ML, machine learning",
+            "NLP, natural language processing"
+          ]
+        }
+      },
+      "analyzer": {
+        "synonym_analyzer": {
+          "tokenizer": "standard",
+          "filter": ["lowercase", "synonym_filter"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "filename": { "type": "text" },
+      "content": {
+        "type": "text",
+        "analyzer": "synonym_analyzer"
+      },
+      "upload_date": { "type": "date" }
+    }
+  }
+}
+"@
+
+Invoke-WebRequest -Uri "http://localhost:9200/documents" -Method Put -Headers @{"Content-Type"="application/json"} -Body $payload
+=======
+ python -m uvicorn shu:app --reload
+curl http://localhost:9200
+
+curl.exe -X GET "http://localhost:9200"
+curl.exe -X DELETE "http://localhost:9200/documents"
+
+$payload = @"
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "synonym_filter": {
+          "type": "synonym",
+          "synonyms": [
+            "AI, artificial intelligence",
+            "ML, machine learning",
+            "NLP, natural language processing"
+          ]
+        }
+      },
+      "analyzer": {
+        "synonym_analyzer": {
+          "tokenizer": "standard",
+          "filter": ["lowercase", "synonym_filter"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "filename": { "type": "text" },
+      "content": {
+        "type": "text",
+        "analyzer": "synonym_analyzer"
+      },
+      "upload_date": { "type": "date" }
+    }
+  }
+}
+"@
+
+Invoke-WebRequest -Uri "http://localhost:9200/documents" -Method Put -Headers @{"Content-Type"="application/json"} -Body $payload
+
